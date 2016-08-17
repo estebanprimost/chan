@@ -3,7 +3,7 @@ import remark from 'remark';
 import removePosition from 'unist-util-remove-position';
 import { read, write } from './fs';
 import emptySpaces from './empty-spaces';
-import unreleased from './unreleased';
+import unreleased from './components/unreleased';
 
 const MARKERS = {
     INITIAL: 0,
@@ -12,21 +12,21 @@ const MARKERS = {
 };
 
 const SEPARATORS = {
-    Added: 'Added',
-    Changed: 'Changed',
-    Fixed: 'Fixed',
-    Security: 'Security',
-    Deprecated: 'Deprecated',
-    Removed: 'Removed'
+    added: 'Added',
+    changed: 'Changed',
+    fixed: 'Fixed',
+    security: 'Security',
+    deprecated: 'Deprecated',
+    removed: 'Removed'
 };
 
 const HEADINGS = new Set(Object.keys(SEPARATORS));
 
 const remarkInstance = remark().use(emptySpaces);
 
-let _unreleased;
-
 export default function parser(dir = process.cwd()) {
+    let _unreleased;
+
     const pathname = path.resolve(dir, 'CHANGELOG.md');
     const contents = read(pathname);
     return {

@@ -1,3 +1,5 @@
+import now from './lib/now';
+
 const MARKERS = {
     INITIAL: 0,
     UNRELEASED: 3
@@ -59,18 +61,11 @@ function encode(children, m, version = null) {
     }).join(BREAK);
 
     if (version) {
-        const now = new Date();
-        const date = [
-            now.getFullYear(),
-            '-', ('0' + (now.getMonth() + 1)).slice(-2),
-            '-', ('0' + now.getDate()).slice(-2)
-        ].join('');
         tpl = TPL.VERSION
             .replace('<version>', version)
-            .replace('<date>', date) +
+            .replace('<date>', now()) +
             LINE +
             tpl;
-        debugger;
     }
 
     children.splice(MARKERS.UNRELEASED, cantToDelete(children), ...m(tpl));
