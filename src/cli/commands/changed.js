@@ -1,7 +1,3 @@
-function parseMsg( rawMsg ) {
-    return `- ${rawMsg}`;
-}
-
 export default function () {
     return {
         command: 'changed [msg]',
@@ -12,7 +8,7 @@ export default function () {
             }
             const msg = argv.msg;
             if (!msg) return;
-            parser.change(parser.SEPARATORS.Changed, parseMsg(msg));
+            parser.change(parser.SEPARATORS.Changed, msg);
             write();
         }
     };

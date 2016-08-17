@@ -7,16 +7,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
--   item1
--   item2
--   super _cool feature_
+-   added 1
+-   added 2
+-   added 3
+
+### Changed
+
+-   changed 1
+-   changed 2
 
 ### Fixed
 
 -   super _cool fix_
-
-## [0.3.0] - 2015-12-03
-
-### Added
-
--   RU translation from @aishek.

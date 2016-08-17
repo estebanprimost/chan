@@ -1,7 +1,9 @@
 import path from 'path';
 import remark from 'remark';
+import removePosition from 'unist-util-remove-position';
 import { read, write } from './fs';
-
+import emptySpaces from './empty-spaces';
+import unreleased from './unreleased';
 
 const MARKERS = {
     INITIAL: 0,
@@ -20,17 +22,21 @@ const SEPARATORS = {
 
 const HEADINGS = new Set(Object.keys(SEPARATORS));
 
+const remarkInstance = remark().use(emptySpaces);
+
+let _unreleased;
+
 export default function parser(dir = process.cwd()) {
     const pathname = path.resolve(dir, 'CHANGELOG.md');
     const contents = read(pathname);
     return {
-        remark,
+        remark: remarkInstance,
         MARKERS,
         SEPARATORS,
         HEADINGS,
-        root: remark.parse(contents),
+        root: removePosition(remarkInstance.parse(contents), true),
         createMDAST(value) {
-            const result = remark.parse(value);
+            const result = removePosition(remarkInstance.parse(value), true);
             if (result.children.length === 1) {
                 return result.children[0];
             }
@@ -42,53 +48,21 @@ export default function parser(dir = process.cwd()) {
         write(content = this.stringify()) {
             return write(pathname, content);
         },
-        stringify() {
-            return this.remark.stringify(this.root);
+        stringify(root = this.root) {
+            return remarkInstance.stringify(root);
         },
-        changeHeaderExists(changeType, node) {
-            return node.type === 'heading' &&
-                node.depth === 3 &&
-                node.children[0].value === changeType;
-        },
-        detectChangeHeader(changeType) {
-            const childrens = this.root.children.slice(MARKERS.UNRELEASED, this.root.children.length - 1);
-            let exists = false;
-            let pos = MARKERS.UNRELEASED;
-            for (let node of childrens) {
-                if (node.type === 'heading' && node.depth === 2) {
-                    break;
-                }
-                if (this.changeHeaderExists(changeType, node)) {
-                    exists = true;
-                    pos += 2; // move pointer to list
-                    break;
-                }
-                pos++;
+        getUnreleased() {
+            if (_unreleased) {
+                return _unreleased;
             }
-            return { exists, pos };
+            _unreleased = unreleased(this);
+            return _unreleased;
         },
-        change(changeType, value) {
-            if (typeof changeType === 'undefined') throw new Error('A change type is required.');
-
-            const changeHeader = this.detectChangeHeader(changeType);
-            let change = remark.parse(value);
-
-            let unchanged = this.root.children.slice(MARKERS.INITIAL, changeHeader.pos);
-
-            if (!changeHeader.exists) {
-                unchanged.push(this.createMDAST(`### ${changeType}`));
-                change = change.children[0]; // list
-                unchanged.push(change);
-            } else {
-                change = change.children[0].children[0]; // listItem
-                unchanged[changeHeader.pos - 1].children.push(change);
-            }
-
-            const previousVersions = this.root.children.slice(changeHeader.pos, this.root.children.length);
-            // create the new root childrens
-            let newRoot = [...unchanged, ...previousVersions];
-            this.root.children = newRoot;
-            return this.root;
+        change(type, value) {
+            this.getUnreleased().insert(type, value);
+        },
+        release(version) {
+            this.getUnreleased().release(version);
         }
     };
 }
