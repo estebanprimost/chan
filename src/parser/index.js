@@ -25,9 +25,9 @@ export default function parser(dir = process.cwd()) {
         remark: remarkInstance,
         SEPARATORS,
         root: removePosition(remarkInstance.parse(contents), true),
-        createMDAST(value) {
+        createMDAST(value, forceArray = false) {
             const result = removePosition(remarkInstance.parse(value), true);
-            if (result.children.length === 1) {
+            if (result.children.length === 1 && !forceArray) {
                 return result.children[0];
             }
             return result.children;

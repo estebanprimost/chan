@@ -3,7 +3,7 @@ export default function () {
         command: 'release [version]',
         describe: 'Groups all your new features and marks a new release on your CHANGELOG.md.',
         builder: {
-            'git-compare': {
+            c: {
                 alias: 'git-compare',
                 default: null,
                 describe: 'overwrite the git compare by default',

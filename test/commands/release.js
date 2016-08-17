@@ -10,7 +10,7 @@ test.before('initialized temp folder', () => {
 
 test('test "release" command. Precondition: CHANGELOG.md exists. Does not contain any new change. Unrelease section is empty. / Postcondition: CHANGELOG.md remains the same. Does not change.', (t) => {
     return Promise.all([
-        cli(tmp, { name: 'release', args: { version: '1.0.0' } }, 'unreleased_empty'),
+        cli(tmp, { name: 'release', args: { 'version': '1.0.0', 'git-compare': 'https://github.com/olivierlacan/keep-a-changelog/compare/<from>...<to>' } }, 'unreleased_empty'),
         readChangelog('fixtures/release/unreleased_empty')
     ])
         .then((values) => {
@@ -21,7 +21,7 @@ test('test "release" command. Precondition: CHANGELOG.md exists. Does not contai
 
 test('test "release" command. Precondition: CHANGELOG.md exists and contains new changes. / Postcondition: CHANGELOG.md populates the new version section with the unreleased content.', (t) => {
     return Promise.all([
-        cli(tmp, { name: 'release', args: { version: '1.0.0' } }, 'unreleased_changes'),
+        cli(tmp, { name: 'release', args: { 'version': '1.0.0', 'git-compare': 'https://github.com/olivierlacan/keep-a-changelog/compare/<from>...<to>' } }, 'unreleased_changes'),
         readChangelog('expected/release/unreleased_changes')
     ])
         .then((values) => {
@@ -33,7 +33,7 @@ test('test "release" command. Precondition: CHANGELOG.md exists and contains new
 
 test('test "release" command. Precondition: CHANGELOG.md exists and contains new changes along with previous versions. / Postcondition: CHANGELOG.md creates a new version section with the unreleased content.', (t) => {
     return Promise.all([
-        cli(tmp, { name: 'release', args: { version: '1.0.1' } }, 'unreleased_previous_versions'), readChangelog('expected/release/unreleased_previous_versions')
+        cli(tmp, { name: 'release', args: { 'version': '1.0.1', 'git-compare': 'https://github.com/olivierlacan/keep-a-changelog/compare/<from>...<to>' } }, 'unreleased_previous_versions'), readChangelog('expected/release/unreleased_previous_versions')
     ])
         .then((values) => {
             let [result, expected] = values;

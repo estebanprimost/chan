@@ -125,9 +125,7 @@ function compileRelease(release = 0, children, m, version = null) {
     }
 
 
-    if (this.definitions.nodes.length > 0) {
-        this.definitions.start = left.start + left.len;
-    }
+    this.definitions.start = left.start + left.len;
 
     return tpl;
 }
@@ -172,7 +170,7 @@ function addDefinition(version, gitCompare = null) {
     let getGitUrl;
     const that = this;
     if (gitCompare) {
-        getGitUrl = Promise.resolve({ fromUser: true, gitCompare });
+        getGitUrl = Promise.resolve({ fromUser: true, url: gitCompare });
     } else {
         getGitUrl = pify(gitconfig)(process.cwd())
             .then(config => {
@@ -194,7 +192,7 @@ function addDefinition(version, gitCompare = null) {
         }
 
         tplUrl = tplUrl
-            .replace('<from>', version)
+            .replace('<from>', 'v' + version)
             .replace('<to>', 'HEAD');
 
         const newDef = TPL.DEFINITION
@@ -204,7 +202,7 @@ function addDefinition(version, gitCompare = null) {
         if (that.definitions.nodes.length > 0) {
             const oldNode = that.definitions.nodes[0];
             oldNode.text = oldNode.text
-                .replace('HEAD', version)
+                .replace('HEAD', 'v' + version)
                 .replace('unreleased', version);
         }
 
@@ -218,10 +216,16 @@ function compileDefinitions(children, m) {
     const tpl = this.definitions.nodes.map((node) => {
         return node.text;
     }).join(LINE);
+    const tplParsed = m(tpl, true);
 
-    const tplParsed = m(tpl);
     const end = children.length - this.definitions.start;
-    children.splice(this.definitions.start, end + 1, ...tplParsed);
+    if (this.definitions.start === children.length) {
+        tplParsed.forEach((elem) => {
+            children.push(elem);
+        });
+    } else {
+        children.splice(this.definitions.start, end, ...tplParsed);
+    }
 }
 
 export default function mtree(parser) {

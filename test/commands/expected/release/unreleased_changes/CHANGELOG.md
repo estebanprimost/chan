@@ -7,3 +7,5 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [1.0.0] - <currentDate>
 ### Added
 -   test change 1
+
+[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v1.0.0...HEAD
