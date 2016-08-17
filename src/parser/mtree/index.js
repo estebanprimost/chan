@@ -1,4 +1,6 @@
 import now from './lib/now';
+import gitconfig from 'gitconfiglocal';
+import pify from 'pify';
 
 const MARKERS = {
     INITIAL: 0,
@@ -7,7 +9,7 @@ const MARKERS = {
 
 const STAGES = {
     RELEASE: 0,
-    REFS: 1
+    DEFINITION: 1
 };
 
 const LINE = '\n';
@@ -17,7 +19,8 @@ const TPL = {
     UNRELEASED: '## [Unreleased]',
     H3: '### <text>',
     VERSION: '## [<version>] - <date>',
-    LI: '- <text>'
+    LI: '- <text>',
+    DEFINITION: '[<version>]: <git-compare>'
 };
 
 function processRelease(release, node, elem, stringify) {
@@ -33,6 +36,7 @@ function processRelease(release, node, elem, stringify) {
             });
         }
     }
+    release.len++;
 
     return node;
 }
@@ -43,10 +47,13 @@ function decode(children, stringify) {
             {
                 text: TPL.UNRELEASED,
                 start: MARKERS.UNRELEASED,
+                len: 1,
                 nodes: []
             }
         ],
-        refs: []
+        definitions: {
+            nodes: []
+        }
     };
 
     let node;
@@ -58,15 +65,25 @@ function decode(children, stringify) {
             const release = {
                 text: stringify(elem),
                 start: pos,
+                len: 1,
                 nodes: []
             };
             that.releases.push(release);
             pos++;
             continue;
+        } else if (elem.type === 'definition') {
+            currentStage = STAGES.DEFINITION;
         }
 
         if (currentStage === STAGES.RELEASE) {
             node = processRelease(that.releases[that.releases.length - 1], node, elem, stringify);
+        } else {
+            if (that.definitions.start === undefined) {
+                that.definitions.start = pos;
+            }
+            that.definitions.nodes.push({
+                text: stringify(elem)
+            });
         }
         pos++;
     }
@@ -93,18 +110,39 @@ function compileRelease(release = 0, children, m, version = null) {
         tpl = this.releases[release].text + LINE + tpl;
     }
 
-    const end = this.releases[release + 1] ?
-        this.releases[release + 1].start - this.releases[release].start :
-        children.length - this.releases[release].start;
+    const len = this.releases[release].len;
 
     const tplParsed = m(tpl);
-    children.splice(this.releases[release].start, end + 1, ...tplParsed);
+    this.releases[release].len = tplParsed.length;
+    children.splice(this.releases[release].start, len, ...tplParsed);
 
-    if (this.releases[release + 1]) {
-        this.releases[release + 1].start = this.releases[release].start + tplParsed.length;
+    let left = this.releases[release];
+    if (this.releases.length > 1) {
+        this.releases.slice(release + 1).forEach((r) => {
+            r.start = left.start + left.len;
+            left = r;
+        });
+    }
+
+
+    if (this.definitions.nodes.length > 0) {
+        this.definitions.start = left.start + left.len;
     }
 
     return tpl;
+}
+
+function defineGITCompare(url) {
+    let tlpUrl = url;
+    if (tlpUrl.indexOf('github') !== -1) {
+        tlpUrl = tlpUrl
+            .substr(0, tlpUrl.length - 4)
+            .replace('git@github.com:', '')
+            .replace('https://github.com', '');
+
+        return `https://github.com/${tlpUrl}/compare/<from>...<to>`;
+    }
+    return '';
 }
 
 function findHeaderOrCreate(type) {
@@ -130,6 +168,62 @@ function findHeaderOrCreate(type) {
     return node;
 }
 
+function addDefinition(version, gitCompare = null) {
+    let getGitUrl;
+    const that = this;
+    if (gitCompare) {
+        getGitUrl = Promise.resolve({ fromUser: true, gitCompare });
+    } else {
+        getGitUrl = pify(gitconfig)(process.cwd())
+            .then(config => {
+                const url = config.remote && config.remote.origin && config.remote.origin.url;
+
+                return { fromUser: false, url };
+            })
+            .catch(() => {
+                throw new Error('git no defined!');
+            });
+    }
+
+    return getGitUrl.then((urlObj) => {
+        let tplUrl = '';
+        if (urlObj.fromUser) {
+            tplUrl = urlObj.url;
+        } else {
+            tplUrl = defineGITCompare(urlObj.url);
+        }
+
+        tplUrl = tplUrl
+            .replace('<from>', version)
+            .replace('<to>', 'HEAD');
+
+        const newDef = TPL.DEFINITION
+            .replace('<version>', 'unreleased')
+            .replace('<git-compare>', tplUrl);
+
+        if (that.definitions.nodes.length > 0) {
+            const oldNode = that.definitions.nodes[0];
+            oldNode.text = oldNode.text
+                .replace('HEAD', version)
+                .replace('unreleased', version);
+        }
+
+        that.definitions.nodes.splice(0, 0, {
+            text: newDef
+        });
+    });
+}
+
+function compileDefinitions(children, m) {
+    const tpl = this.definitions.nodes.map((node) => {
+        return node.text;
+    }).join(LINE);
+
+    const tplParsed = m(tpl);
+    const end = children.length - this.definitions.start;
+    children.splice(this.definitions.start, end + 1, ...tplParsed);
+}
+
 export default function mtree(parser) {
     const that = Object.assign({}, decode(parser.root.children, parser.stringify));
 
@@ -141,8 +235,12 @@ export default function mtree(parser) {
         return that.compileRelease(0);
     };
 
-    that.version = function (version) {
-        return compileRelease.call(this, 0, parser.root.children, parser.createMDAST, version);
+    that.version = function (version, gitCompare = null) {
+        compileRelease.call(this, 0, parser.root.children, parser.createMDAST, version);
+
+        return new Promise((resolve) => {
+            that.addDefinition(version, gitCompare).then(resolve);
+        });
     };
 
     that.insert = function (type, value) {
@@ -152,6 +250,15 @@ export default function mtree(parser) {
         });
         that.compileUnreleased();
     };
+
+    that.addDefinition = function (version, gitCompare) {
+        return addDefinition.call(that, version, gitCompare)
+            .then(() => {
+                return compileDefinitions.call(that, parser.root.children, parser.createMDAST);
+            });
+    };
+
+    that.TPL = TPL;
 
     return that;
 }

@@ -51,8 +51,8 @@ export default function parser(dir = process.cwd()) {
         change(type, value) {
             this.getMTREE().insert(type, value);
         },
-        release(version) {
-            this.getMTREE().version(version);
+        release(version, gitCompare = null) {
+            return this.getMTREE().version(version, gitCompare);
         }
     };
 }

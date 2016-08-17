@@ -24,6 +24,8 @@
   ],
   "dependencies": {
     "chalk": "^1.1.3",
+    "gitconfiglocal": "^2.0.1",
+    "pify": "^2.3.0",
     "remark": "^5.1.0",
     "unist-util-remove-position": "^1.1.0",
     "yargs": "^4.8.1"

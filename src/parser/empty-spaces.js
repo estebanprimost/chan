@@ -41,6 +41,12 @@ export default function (remark) {
                     } else {
                         values.push(LINE);
                     }
+                } else if (child.type === 'definition') {
+                    if (prev.type !== 'definition') {
+                        values.push(BREAK);
+                    } else {
+                        values.push(LINE);
+                    }
                 } else {
                     values.push(BREAK);
                 }
