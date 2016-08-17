@@ -14,7 +14,7 @@ export default function () {
             }
 
             // do nothing if unreleased is empty.
-            if (parser.root.children.length <= parser.MARKERS.UNRELEASED) return;
+            if (parser.getMTREE().releases[0].nodes.length === 0) return;
 
             parser.release(version);
 

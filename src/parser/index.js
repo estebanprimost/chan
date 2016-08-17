@@ -3,13 +3,7 @@ import remark from 'remark';
 import removePosition from 'unist-util-remove-position';
 import { read, write } from './fs';
 import emptySpaces from './empty-spaces';
-import unreleased from './components/unreleased';
-
-const MARKERS = {
-    INITIAL: 0,
-    UNRELEASED: 3,
-    CHANGES: 4
-};
+import mtree from './mtree';
 
 const SEPARATORS = {
     added: 'Added',
@@ -20,20 +14,16 @@ const SEPARATORS = {
     removed: 'Removed'
 };
 
-const HEADINGS = new Set(Object.keys(SEPARATORS));
-
 const remarkInstance = remark().use(emptySpaces);
 
 export default function parser(dir = process.cwd()) {
-    let _unreleased;
+    let _mtree;
 
     const pathname = path.resolve(dir, 'CHANGELOG.md');
     const contents = read(pathname);
     return {
         remark: remarkInstance,
-        MARKERS,
         SEPARATORS,
-        HEADINGS,
         root: removePosition(remarkInstance.parse(contents), true),
         createMDAST(value) {
             const result = removePosition(remarkInstance.parse(value), true);
@@ -51,18 +41,18 @@ export default function parser(dir = process.cwd()) {
         stringify(root = this.root) {
             return remarkInstance.stringify(root);
         },
-        getUnreleased() {
-            if (_unreleased) {
-                return _unreleased;
+        getMTREE() {
+            if (_mtree) {
+                return _mtree;
             }
-            _unreleased = unreleased(this);
-            return _unreleased;
+            _mtree = mtree(this);
+            return _mtree;
         },
         change(type, value) {
-            this.getUnreleased().insert(type, value);
+            this.getMTREE().insert(type, value);
         },
         release(version) {
-            this.getUnreleased().release(version);
+            this.getMTREE().version(version);
         }
     };
 }

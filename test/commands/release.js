@@ -1,7 +1,7 @@
 import test from 'ava';
 import { cli, readChangelog } from './helpers';
 import tmpdir from './helpers/tmpdir';
-import now from '../../src/parser/components/lib/now';
+import now from '../../src/parser/mtree/lib/now';
 
 let tmp;
 test.before('initialized temp folder', () => {
