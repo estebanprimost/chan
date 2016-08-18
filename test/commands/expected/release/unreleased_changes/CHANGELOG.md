@@ -8,4 +8,5 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 -   test change 1
 
-[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v1.0.0...HEAD
+[unreleased]: https://github.com/geut/chan/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/geut/chan/compare/<commit>...v1.0.0

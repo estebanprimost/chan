@@ -1,6 +1,6 @@
 import now from './lib/now';
-import gitconfig from 'gitconfiglocal';
-import pify from 'pify';
+import gitUrlCompare from './lib/git-url-compare';
+import firstCommit from './lib/first-commit';
 
 const MARKERS = {
     INITIAL: 0,
@@ -124,23 +124,9 @@ function compileRelease(release = 0, children, m, version = null) {
         });
     }
 
-
     this.definitions.start = left.start + left.len;
 
     return tpl;
-}
-
-function defineGITCompare(url) {
-    let tlpUrl = url;
-    if (tlpUrl.indexOf('github') !== -1) {
-        tlpUrl = tlpUrl
-            .substr(0, tlpUrl.length - 4)
-            .replace('git@github.com:', '')
-            .replace('https://github.com', '');
-
-        return `https://github.com/${tlpUrl}/compare/<from>...<to>`;
-    }
-    return '';
 }
 
 function findHeaderOrCreate(type) {
@@ -166,66 +152,52 @@ function findHeaderOrCreate(type) {
     return node;
 }
 
-function addDefinition(version, gitCompare = null) {
-    let getGitUrl;
+function addDefinition(version = null, gitCompare = null) {
     const that = this;
-    if (gitCompare) {
-        getGitUrl = Promise.resolve({ fromUser: true, url: gitCompare });
-    } else {
-        getGitUrl = pify(gitconfig)(process.cwd())
-            .then(config => {
-                const url = config.remote && config.remote.origin && config.remote.origin.url;
+    version = `v${version}`;
+    return gitUrlCompare(gitCompare)
+        .then((url) => {
+            let def = TPL.DEFINITION.replace('<git-compare>', url);
 
-                return { fromUser: false, url };
-            })
-            .catch(() => {
-                throw new Error('git no defined!');
+            if (that.definitions.nodes.length > 0) {
+                const oldNode = that.definitions.nodes[0];
+                oldNode.text = oldNode.text
+                    .replace('HEAD', version)
+                    .replace('unreleased', version);
+
+                return def;
+            }
+
+            return firstCommit().then((commit) => {
+                that.definitions.nodes.push({
+                    text: def
+                        .replace('<version>', version)
+                        .replace('<from>', commit)
+                        .replace('<to>', version)
+                });
+
+                return def;
             });
-    }
-
-    return getGitUrl.then((urlObj) => {
-        let tplUrl = '';
-        if (urlObj.fromUser) {
-            tplUrl = urlObj.url;
-        } else {
-            tplUrl = defineGITCompare(urlObj.url);
-        }
-
-        tplUrl = tplUrl
-            .replace('<from>', 'v' + version)
-            .replace('<to>', 'HEAD');
-
-        const newDef = TPL.DEFINITION
-            .replace('<version>', 'unreleased')
-            .replace('<git-compare>', tplUrl);
-
-        if (that.definitions.nodes.length > 0) {
-            const oldNode = that.definitions.nodes[0];
-            oldNode.text = oldNode.text
-                .replace('HEAD', 'v' + version)
-                .replace('unreleased', version);
-        }
-
-        that.definitions.nodes.splice(0, 0, {
-            text: newDef
+        })
+        .then((def) => {
+            that.definitions.nodes.splice(0, 0, {
+                text: def
+                    .replace('<version>', 'unreleased')
+                    .replace('<from>', version)
+                    .replace('<to>', 'HEAD')
+            });
         });
-    });
 }
 
 function compileDefinitions(children, m) {
     const tpl = this.definitions.nodes.map((node) => {
         return node.text;
     }).join(LINE);
-    const tplParsed = m(tpl, true);
 
+    const tplParsed = m(tpl, true);
     const end = children.length - this.definitions.start;
-    if (this.definitions.start === children.length) {
-        tplParsed.forEach((elem) => {
-            children.push(elem);
-        });
-    } else {
-        children.splice(this.definitions.start, end, ...tplParsed);
-    }
+
+    children.splice(this.definitions.start, end, ...tplParsed);
 }
 
 export default function mtree(parser) {
