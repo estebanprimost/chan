@@ -1,10 +1,10 @@
 import gitconfig from 'gitconfiglocal';
 import pify from 'pify';
-import gh from 'parse-github-url';
+import gitUrlParse from 'git-url-parse';
 
 function defineGITCompare(url) {
-    const parseUrl = gh(url);
-    return `https://${parseUrl.host}/${parseUrl.repository}/compare/<from>...<to>`;
+    let parseUrl = gitUrlParse(url);
+    return `${parseUrl.toString('https')}/compare/<from>...<to>`;
 }
 
 
