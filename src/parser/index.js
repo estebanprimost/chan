@@ -23,6 +23,7 @@ export default function parser(dir = process.cwd()) {
     const contents = read(pathname);
     return {
         remark: remarkInstance,
+        gitCompare: null,
         SEPARATORS,
         root: removePosition(remarkInstance.parse(contents), true),
         createMDAST(value, forceArray = false) {
@@ -49,7 +50,7 @@ export default function parser(dir = process.cwd()) {
             return _mtree;
         },
         change(type, value) {
-            this.getMTREE().insert(type, value);
+            return this.getMTREE().insert(type, value);
         },
         release(version, gitCompare = null) {
             return this.getMTREE().version(version, gitCompare);

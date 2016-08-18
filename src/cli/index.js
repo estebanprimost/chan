@@ -73,6 +73,11 @@ yargs
         describe: 'Disable the console messages',
         default: false
     })
+    .option('git-compare', {
+        describe: 'Overwrite the git compare by default',
+        default: null,
+        type: 'string'
+    })
     .help('help')
     .global(['p', 'stdout', 'silence']);
 

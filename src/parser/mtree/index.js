@@ -152,20 +152,27 @@ function findHeaderOrCreate(type) {
     return node;
 }
 
-function addDefinition(version = null, gitCompare = null) {
+function addDefinition(version = 'unreleased', gitCompare = null) {
     const that = this;
-    version = `v${version}`;
     return gitUrlCompare(gitCompare)
         .then((url) => {
             let def = TPL.DEFINITION.replace('<git-compare>', url);
 
             if (that.definitions.nodes.length > 0) {
+                version = `v${version}`;
                 const oldNode = that.definitions.nodes[0];
                 oldNode.text = oldNode.text
                     .replace('HEAD', version)
                     .replace('unreleased', version);
 
-                return def;
+                that.definitions.nodes.splice(0, 0, {
+                    text: def
+                        .replace('<version>', 'unreleased')
+                        .replace('<from>', version)
+                        .replace('<to>', 'HEAD')
+                });
+
+                return Promise.resolve();
             }
 
             return firstCommit().then((commit) => {
@@ -173,18 +180,10 @@ function addDefinition(version = null, gitCompare = null) {
                     text: def
                         .replace('<version>', version)
                         .replace('<from>', commit)
-                        .replace('<to>', version)
+                        .replace('<to>', 'HEAD')
                 });
 
                 return def;
-            });
-        })
-        .then((def) => {
-            that.definitions.nodes.splice(0, 0, {
-                text: def
-                    .replace('<version>', 'unreleased')
-                    .replace('<from>', version)
-                    .replace('<to>', 'HEAD')
             });
         });
 }
@@ -201,6 +200,7 @@ function compileDefinitions(children, m) {
 }
 
 export default function mtree(parser) {
+    const gitCompare = parser.gitCompare;
     const that = Object.assign({}, decode(parser.root.children, parser.stringify));
 
     that.compileRelease = function (release) {
@@ -211,12 +211,10 @@ export default function mtree(parser) {
         return that.compileRelease(0);
     };
 
-    that.version = function (version, gitCompare = null) {
+    that.version = function (version) {
         compileRelease.call(this, 0, parser.root.children, parser.createMDAST, version);
 
-        return new Promise((resolve) => {
-            that.addDefinition(version, gitCompare).then(resolve);
-        });
+        return that.addDefinition(version, gitCompare);
     };
 
     that.insert = function (type, value) {
@@ -225,9 +223,15 @@ export default function mtree(parser) {
             text: value
         });
         that.compileUnreleased();
+        return new Promise((resolve) => {
+            if (that.definitions.nodes.length === 0) {
+                return that.addDefinition('unreleased', gitCompare).then(resolve);
+            }
+            return resolve();
+        });
     };
 
-    that.addDefinition = function (version, gitCompare) {
+    that.addDefinition = function (version) {
         return addDefinition.call(that, version, gitCompare)
             .then(() => {
                 return compileDefinitions.call(that, parser.root.children, parser.createMDAST);

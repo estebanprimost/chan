@@ -15,6 +15,7 @@ export default function createCommand(cli, def) {
 
     def.handler = (argv) => {
         const parserInstance = parser(argv.path);
+        parserInstance.gitCompare = argv.gitCompare;
         const result = userHandler.call(
             cli,
             parserInstance,
