@@ -16,7 +16,14 @@ export default function () {
             // do nothing if unreleased is empty.
             if (parser.getMTREE().releases[0].nodes.length === 0) return;
 
-            parser.release(version).then(write);
+            parser.release(version)
+                .then(write)
+                .then(() => {
+                    this.log().success(`Version ${version} released. :)`);
+                })
+                .catch((e) => {
+                    this.log().error(e.message);
+                });
         }
     };
 }

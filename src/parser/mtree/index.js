@@ -223,9 +223,12 @@ export default function mtree(parser) {
             text: value
         });
         that.compileUnreleased();
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             if (that.definitions.nodes.length === 0) {
-                return that.addDefinition('unreleased', gitCompare).then(resolve);
+                return that
+                    .addDefinition('unreleased', gitCompare)
+                    .then(resolve)
+                    .catch(reject);
             }
             return resolve();
         });

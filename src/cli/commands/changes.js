@@ -34,7 +34,11 @@ Object.keys(commands).forEach((type) => {
             const msg = argv.msg;
             if (!msg) return;
 
-            parser.change(parser.SEPARATORS[type], msg).then(write);
+            parser.change(parser.SEPARATORS[type], msg)
+                .then(write)
+                .catch((e) => {
+                    this.log().error(e.message);
+                });
         }
     });
 
