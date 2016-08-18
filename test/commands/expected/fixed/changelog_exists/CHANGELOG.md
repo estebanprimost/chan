@@ -5,3 +5,5 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Fixed
 -   super _cool feature_
+
+[unreleased]: https://github.com/geut/chan/compare/first-commit...HEAD

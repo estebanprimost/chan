@@ -32,9 +32,9 @@ Object.keys(commands).forEach((type) => {
                 throw new Error('CHANGELOG.md does not exists. You can run: chan init in order to create a fresh new one.');
             }
             const msg = argv.msg;
-            if (!msg) return;
+            if (!msg) return null;
 
-            parser.change(parser.SEPARATORS[type], msg)
+            return parser.change(parser.SEPARATORS[type], msg)
                 .then(write)
                 .catch((e) => {
                     this.log().error(e.message);

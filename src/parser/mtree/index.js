@@ -159,16 +159,15 @@ function addDefinition(version = 'unreleased', gitCompare = null) {
             let def = TPL.DEFINITION.replace('<git-compare>', url);
 
             if (that.definitions.nodes.length > 0) {
-                version = `v${version}`;
                 const oldNode = that.definitions.nodes[0];
                 oldNode.text = oldNode.text
-                    .replace('HEAD', version)
+                    .replace('HEAD', `v${version}`)
                     .replace('unreleased', version);
 
                 that.definitions.nodes.splice(0, 0, {
                     text: def
                         .replace('<version>', 'unreleased')
-                        .replace('<from>', version)
+                        .replace('<from>', `v${version}`)
                         .replace('<to>', 'HEAD')
                 });
 

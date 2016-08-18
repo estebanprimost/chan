@@ -10,7 +10,7 @@ test.before('initialized temp folder', () => {
 
 test('test "release" command. Precondition: CHANGELOG.md exists. Does not contain any new change. Unrelease section is empty. / Postcondition: CHANGELOG.md remains the same. Does not change.', (t) => {
     return Promise.all([
-        cli(tmp, { name: 'release', args: { 'version': '1.0.0', 'git-compare': 'https://github.com/olivierlacan/keep-a-changelog/compare/<from>...<to>' } }, 'unreleased_empty'),
+        cli(tmp, { name: 'release', args: { 'version': '1.0.0',  } }, 'unreleased_empty'),
         readChangelog('fixtures/release/unreleased_empty')
     ])
         .then((values) => {
