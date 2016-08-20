@@ -3,9 +3,11 @@
  *
  * By your friends at GEUT
  */
+
 import yargs from 'yargs';
 import pkg from '../../package.json';
 import createCommand from './lib/create-command';
+import loadUserCommands from './lib/load-user-commands';
 import createLog from './lib/log';
 import { init, added, release, fixed, changed, deprecated, removed, security } from './commands';
 
@@ -81,6 +83,7 @@ const initArgv = yargs
     .option('u', {
         alias: 'use',
         describe: 'Extend chan with your own commands',
+        default: [],
         type: 'array'
     })
     .config()
@@ -90,7 +93,7 @@ const initArgv = yargs
 
 cli.commandsArgv = initArgv.commands ? initArgv.commands : {};
 
-cli.use([
+cli.use(loadUserCommands([
     init(),
     added(),
     fixed(),
@@ -99,6 +102,6 @@ cli.use([
     removed(),
     deprecated(),
     release()
-]);
+], initArgv.use));
 
 export default cli;

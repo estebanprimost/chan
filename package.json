@@ -29,6 +29,7 @@
     "gitconfiglocal": "^2.0.1",
     "pify": "^2.3.0",
     "remark": "^5.1.0",
+    "req-cwd": "^1.0.1",
     "unist-util-remove-position": "^1.1.0",
     "yargs": "^5.0.0"
   },
