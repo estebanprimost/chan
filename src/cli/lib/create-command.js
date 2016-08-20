@@ -9,10 +9,21 @@ export default function createCommand(cli, def) {
     if (def.name.length === 0) {
         throw new Error('Property `name` can\'t be defined.');
     }
-    def.builder = def.builder || {};
+
+    const userBuilder = def.builder || ((yargs) => yargs);
+    def.builder = (yargs) => {
+        yargs = userBuilder(yargs)
+            .config()
+            .pkgConf('chan', process.cwd());
+
+        if (cli.commandsArgv && cli.commandsArgv[def.name]) {
+            yargs.config(cli.commandsArgv[def.name]);
+        }
+
+        return yargs;
+    };
 
     const userHandler = def.handler;
-
     def.handler = (argv) => {
         const parserInstance = parser(argv.path);
         parserInstance.gitCompare = argv.gitCompare;
@@ -43,7 +54,7 @@ export default function createCommand(cli, def) {
         return result;
     };
 
-    cli.yargs().command(def);
+    cli.yargs().command(def.name, def.describe, def.builder, def.handler);
 
     return def;
 }

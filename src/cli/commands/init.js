@@ -10,13 +10,12 @@ export default function () {
     return {
         command: 'init',
         describe: 'Creates a CHANGELOG.md if it does not exists. chan will work with this file.',
-        builder: {
-            o: {
+        builder(yargs) {
+            return yargs.option('o', {
                 alias: 'overwrite',
-                default: false,
                 describe: 'overwrite the current CHANGELOG.md',
                 type: 'boolean'
-            }
+            });
         },
         handler(parser, argv, write) {
             const m = parser.createMDAST;

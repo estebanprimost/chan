@@ -55,7 +55,7 @@ const cli = {
     }
 };
 
-yargs
+const initArgv = yargs
     .usage(pkg.description)
     .version()
     .alias('v', 'version')
@@ -63,23 +63,32 @@ yargs
     .alias('h', 'help')
     .option('p', {
         alias: 'path',
-        describe: 'Define the path of the CHANGELOG.md (cwd by default)'
+        describe: 'Define the path of the CHANGELOG.md (cwd by default)',
+        type: 'string'
     })
     .option('stdout', {
         describe: 'Define the output as STDOUT',
-        default: false
+        type: 'boolean'
     })
     .option('silence', {
         describe: 'Disable the console messages',
-        default: false
+        type: 'boolean'
     })
     .option('git-compare', {
         describe: 'Overwrite the git compare by default',
-        default: null,
         type: 'string'
     })
-    .help('help')
-    .global(['p', 'stdout', 'silence']);
+    .option('u', {
+        alias: 'use',
+        describe: 'Extend chan with your own commands',
+        type: 'array'
+    })
+    .config()
+    .pkgConf('chan', process.cwd())
+    .global(['p', 'stdout', 'silence', 'git-compare', 'u', 'config'])
+    .argv;
+
+cli.commandsArgv = initArgv.commands ? initArgv.commands : {};
 
 cli.use([
     init(),
