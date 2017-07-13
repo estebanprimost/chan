@@ -1,10 +1,20 @@
+import { equal } from 'assert';
 import gitconfig from 'gitconfiglocal';
 import pify from 'pify';
 import gitUrlParse from 'git-url-parse';
 
+const dots = (source) => {
+    let separator = '..';
+    if (source === 'github.com') {
+        separator = '...';
+    }
+    return separator;
+};
+
 export function defineGITCompare(url) {
+    equal(typeof url, 'string', 'chan: expects a git url to compare. Maybe you are on a non-git repo?');
     let parseUrl = gitUrlParse(url);
-    return `${parseUrl.toString('https')}/compare/<from>...<to>`;
+    return `${parseUrl.toString('https')}/compare/<from>${dots(parseUrl.source)}<to>`;
 }
 
 export default function gitUrlCompare(gitCompare) {
@@ -20,7 +30,7 @@ export default function gitUrlCompare(gitCompare) {
             });
     }
 
-    return request.then((urlObj) => {
+    return request.then(urlObj => {
         if (urlObj.fromUser) {
             return urlObj.url;
         }
